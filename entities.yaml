@@ -1,0 +1,38 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: repoflow-s3-proxy-demo
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: resources-external-service
+  namespace: repoflow-s3-proxy-demo
+spec:
+  type: ExternalName
+  externalName: s3.amazonaws.com
+  ports:
+    -
+      name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: proxy-ingress
+  namespace: repoflow-s3-proxy-demo
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /resources.repoflow.com/resources/$2
+    nginx.ingress.kubernetes.io/upstream-vhost: s3.amazonaws.com
+spec:
+  rules:
+    - host: s3-proxy.repoflow.com
+      http:
+        paths:
+          - path: /resources(/|$)(.*)
+            backend:
+              serviceName: resources-external-service
+              servicePort: 80
+
